@@ -3,133 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINE 訊息費用計算 (M-Q修正版)</title>
+    <title>LINE 訊息費用計算 (純階梯版)</title>
     <style>
         :root { --line-green: #06C755; --bg-color: #f4f7f6; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); margin: 0; display: flex; justify-content: center; padding: 20px; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 100%; max-width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h1 { color: var(--line-green); font-size: 20px; text-align: center; margin-bottom: 25px; }
         .input-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
-        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 18px; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
-        input:focus { border-color: var(--line-green); }
+        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 18px; box-sizing: border-box; outline: none; }
         .result-box { background: #f9f9f9; padding: 15px; border-radius: 10px; border-left: 5px solid var(--line-green); margin-top: 10px; }
         .result-item { display: flex; justify-content: space-between; margin: 8px 0; font-size: 16px; }
         .result-value { font-weight: bold; color: #000; }
-        .details-btn { display: block; width: 100%; background: none; border: none; color: #666; text-decoration: underline; margin-top: 20px; cursor: pointer; font-size: 14px; }
-        #details { display: none; font-size: 13px; color: #666; margin-top: 10px; line-height: 1.6; background: #eee; padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>LINE 加購訊息試算 (M-Q)</h1>
-
+    <h1>LINE 訊息費用試算 (純階梯)</h1>
     <div class="input-group">
-        <label>月訊息總數 (含贈送)</label>
-        <input type="number" id="msgCount" placeholder="例如: 10000">
+        <label>月訊息總數</label>
+        <input type="number" id="msgCount" placeholder="輸入總數">
     </div>
-
     <div class="input-group">
-        <label>預算金額 (含月費)</label>
-        <input type="number" id="budget" placeholder="例如: 3000">
+        <label>預算金額</label>
+        <input type="number" id="budget" placeholder="輸入預算">
     </div>
-
     <div class="result-box">
         <div class="result-item"><span>預估總金額</span><span class="result-value" id="resAmount">$ 0</span></div>
         <div class="result-item"><span>預估可發數量</span><span class="result-value" id="resCount">0 則</span></div>
-        <div class="result-item"><span>平均單價</span><span class="result-value" id="resAvg">$ 0</span></div>
-    </div>
-
-    <button class="details-btn" onclick="toggleDetails()">點擊查看 M-Q 階梯費率</button>
-    <div id="details">
-        固定月費：$1,200 (包含 6,000 則)<br>
-        加購階梯 (自 6,001 則起算)：<br>
-        0 - 4,000 則：$0.200<br>
-        4,001 - 24,000 則：$0.170<br>
-        24,001 - 44,000 則：$0.145<br>
-        44,001 - 94,000 則：$0.110<br>
-        94,001 - 194,000 則：$0.075<br>
-        194,001 - 494,000 則：$0.045<br>
-        494,001 - 994,000 則：$0.025<br>
-        994,001 則以上：$0.011
     </div>
 </div>
-
 <script>
-    // 依據試算表 M-Q 欄位更新的費率數據
     const tiers = [
-        { min: 0, max: 4000, price: 0.200 },
-        { min: 4000, max: 24000, price: 0.170 },
-        { min: 24000, max: 44000, price: 0.145 },
-        { min: 44000, max: 94000, price: 0.110 },
-        { min: 94000, max: 194000, price: 0.075 },
-        { min: 194000, max: 494000, price: 0.045 },
-        { min: 494000, max: 994000, price: 0.025 },
-        { min: 994000, max: Infinity, price: 0.011 }
+        { limit: 25000, price: 0.200 }, { limit: 35000, price: 0.165 },
+        { limit: 45000, price: 0.154 }, { limit: 65000, price: 0.143 },
+        { limit: 105000, price: 0.132 }, { limit: 185000, price: 0.121 },
+        { limit: 345000, price: 0.1045 }, { limit: 665000, price: 0.1034 },
+        { limit: 825000, price: 0.099 }, { limit: 1305000, price: 0.0946 },
+        { limit: 2585000, price: 0.0858 }, { limit: 3525000, price: 0.077 },
+        { limit: 5145000, price: 0.066 }, { limit: 8025000, price: 0.055 },
+        { limit: 10265000, price: 0.0385 }, { limit: 20505000, price: 0.0187 },
+        { limit: Infinity, price: 0.011 }
     ];
-    const BASE_FEE = 1200;
-    const FREE_MSGS = 6000;
-
     const msgInput = document.getElementById('msgCount');
     const budgetInput = document.getElementById('budget');
 
-    // 正推：數量 -> 金額
     msgInput.addEventListener('input', () => {
         let count = parseFloat(msgInput.value) || 0;
-        let extra = Math.max(0, count - FREE_MSGS);
-        let extraCost = 0;
-
-        tiers.forEach(tier => {
-            if (extra > tier.min) {
-                let currentTierMsgs = Math.min(extra, tier.max) - tier.min;
-                extraCost += currentTierMsgs * tier.price;
-            }
-        });
-
-        let total = count > 0 ? BASE_FEE + extraCost : 0;
-        document.getElementById('resAmount').innerText = `$ ${Math.round(total).toLocaleString()}`;
-        document.getElementById('resAvg').innerText = count > 0 ? `$ ${(total / count).toFixed(3)}` : '$ 0';
-        
-        // 清除另一個結果避免誤看
-        document.getElementById('resCount').innerText = "---";
+        let cost = 0, lastLimit = 0;
+        for (let t of tiers) {
+            if (count <= lastLimit) break;
+            cost += (Math.min(count, t.limit) - lastLimit) * t.price;
+            lastLimit = t.limit;
+        }
+        document.getElementById('resAmount').innerText = `$ ${Math.round(cost).toLocaleString()}`;
     });
 
-    // 反推：預算 -> 數量
     budgetInput.addEventListener('input', () => {
-        let budget = parseFloat(budgetInput.value) || 0;
-        let available = budget - BASE_FEE;
-        let extraMsgs = 0;
-
-        if (available > 0) {
-            for (let tier of tiers) {
-                let rangeWidth = tier.max - tier.min;
-                let rangeMaxCost = rangeWidth * tier.price;
-
-                if (available > rangeMaxCost) {
-                    extraMsgs += rangeWidth;
-                    available -= rangeMaxCost;
-                } else {
-                    extraMsgs += available / tier.price;
-                    available = 0;
-                    break;
-                }
+        let available = parseFloat(budgetInput.value) || 0;
+        let totalMsgs = 0, lastLimit = 0;
+        for (let t of tiers) {
+            let cap = t.limit - lastLimit;
+            let maxCost = cap * t.price;
+            if (available > maxCost) {
+                totalMsgs += cap;
+                available -= maxCost;
+                lastLimit = t.limit;
+            } else {
+                totalMsgs += available / t.price;
+                available = 0;
+                break;
             }
         }
-
-        let totalCount = budget >= BASE_FEE ? FREE_MSGS + extraMsgs : 0;
-        document.getElementById('resCount').innerText = `${Math.floor(totalCount).toLocaleString()} 則`;
-        document.getElementById('resAvg').innerText = totalCount > 0 ? `$ ${(budget / totalCount).toFixed(3)}` : '$ 0';
-        
-        // 清除另一個結果避免誤看
-        document.getElementById('resAmount').innerText = "---";
+        document.getElementById('resCount').innerText = `${Math.floor(totalMsgs).toLocaleString()} 則`;
     });
-
-    function toggleDetails() {
-        const d = document.getElementById('details');
-        d.style.display = d.style.display === 'block' ? 'none' : 'block';
-    }
 </script>
-
 </body>
 </html>
