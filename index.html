@@ -3,31 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINE 訊息費用計算 (一對一精確版)</title>
+    <title>LINE 訊息費用計算</title>
     <style>
-        :root { --line-green: #06C755; --bg-color: #f4f7f6; }
+        :root { --line-green: #06C755; --bg-color: #f4f7f6; --text-dark: #333; }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 100%; max-width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h1 { color: var(--line-green); font-size: 20px; text-align: center; margin-bottom: 25px; }
         .section { background: #f9f9f9; padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #eee; }
         .section-title { font-size: 14px; color: #666; margin-bottom: 15px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
         .input-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--text-dark); }
         input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 18px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--line-green); }
         .result-box { margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
         .result-item { display: flex; justify-content: space-between; margin: 8px 0; font-size: 16px; }
-        .result-label { color: #555; }
         .result-value { font-weight: bold; color: #000; font-size: 18px; }
+        .highlight { color: var(--line-green); }
+        
+        /* 業務資訊區塊 */
+        .biz-card { background: #fff; border: 1px solid var(--line-green); padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        .biz-title { font-size: 14px; color: var(--line-green); font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .biz-info { font-size: 14px; color: #555; line-height: 1.8; }
+        .biz-info strong { color: #000; }
+
         .details-btn { display: block; width: 100%; background: #eee; border: none; color: #444; padding: 10px; border-radius: 8px; margin-top: 10px; cursor: pointer; font-size: 14px; font-weight: bold; }
         #details { display: none; font-size: 13px; color: #666; margin-top: 15px; line-height: 1.6; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
-        .highlight { color: var(--line-green); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>LINE 訊息費用計算</h1>
+    <h1>LINE 訊息費用試算</h1>
+
+    <div class="biz-card">
+        <div class="biz-title">聯絡業務資訊</div>
+        <div class="biz-info">
+            <strong>專員：</strong>陳品婷 Ashley<br>
+            <strong>LineID：</strong>fly814c<br>
+            <strong>Mail：</strong>ashley-chen@taipeiads.com.tw
+        </div>
+    </div>
 
     <div class="section">
         <div class="section-title">輸入訊息數 ➔ 算金額</div>
@@ -35,9 +50,9 @@
             <label>欲發送訊息總數</label>
             <input type="number" id="msgCount" placeholder="請輸入訊息數量">
         </div>
-        <div class="result-box" id="resBoxA">
-            <div class="result-item"><span class="result-label">預估總金額</span><span class="result-value highlight" id="resAmount">$ 0</span></div>
-            <div class="result-item"><span class="result-label">平均每則單價</span><span class="result-value" id="resAvgPrice">$ 0</span></div>
+        <div class="result-box">
+            <div class="result-item"><span>預估總金額</span><span class="result-value highlight" id="resAmount">$ 0</span></div>
+            <div class="result-item"><span>平均每則單價</span><span class="result-value" id="resAvgPrice">$ 0</span></div>
         </div>
     </div>
 
@@ -45,17 +60,17 @@
         <div class="section-title">輸入預算 ➔ 算數量</div>
         <div class="input-group">
             <label>我的預算總額</label>
-            <input type="number" id="budget" placeholder="請輸入金額">
+            <input type="number" id="budget" placeholder="請輸入預算金額">
         </div>
-        <div class="result-box" id="resBoxB">
-            <div class="result-item"><span class="result-label">可發送總數量</span><span class="result-value highlight" id="resCount">0 則</span></div>
-            <div class="result-item"><span class="result-label">$1 可發送則數</span><span class="result-value" id="resAvgMsg">0 則</span></div>
+        <div class="result-box">
+            <div class="result-item"><span>可發送總數量</span><span class="result-value highlight" id="resCount">0 則</span></div>
+            <div class="result-item"><span>$1 可發送則數</span><span class="result-value" id="resAvgMsg">0 則</span></div>
         </div>
     </div>
 
-    <button class="details-btn" onclick="toggleDetails()">📊 查看計算規則與階梯單價</button>
+    <button class="details-btn" onclick="toggleDetails()">📊 查看詳細階梯費率</button>
     <div id="details">
-        <b>階梯式計費 (純訊息費，無月費)：</b><br>
+        <b>階梯式計費規則：</b><br>
         1. 0 - 25,000 則：$0.200<br>
         2. 25,001 - 35,000 則：$0.165<br>
         3. 35,001 - 45,000 則：$0.154<br>
@@ -63,7 +78,7 @@
         5. 65,001 - 105,000 則：$0.132<br>
         6. 105,001 - 185,000 則：$0.121<br>
         7. 185,001 - 345,000 則：$0.1045<br>
-        ...以此類推 (依 M-Q 欄數據)
+        ...以此類推
     </div>
 </div>
 
@@ -83,12 +98,8 @@
     const msgInput = document.getElementById('msgCount');
     const budgetInput = document.getElementById('budget');
 
-    // 格式化數字
-    const fmt = (v) => Math.round(v).toLocaleString();
-
-    // 模式一：輸入數量 -> 算錢
     msgInput.addEventListener('input', () => {
-        budgetInput.value = ""; // 清空另一邊
+        budgetInput.value = ""; 
         let count = parseFloat(msgInput.value) || 0;
         let cost = 0, lastLimit = 0;
         for (let t of tiers) {
@@ -96,13 +107,12 @@
             cost += (Math.min(count, t.limit) - lastLimit) * t.price;
             lastLimit = t.limit;
         }
-        document.getElementById('resAmount').innerText = `$ ${fmt(cost)}`;
+        document.getElementById('resAmount').innerText = `$ ${Math.round(cost).toLocaleString()}`;
         document.getElementById('resAvgPrice').innerText = count > 0 ? `$ ${(cost / count).toFixed(4)}` : "$ 0";
     });
 
-    // 模式二：輸入錢 -> 算數量
     budgetInput.addEventListener('input', () => {
-        msgInput.value = ""; // 清空另一邊
+        msgInput.value = ""; 
         let available = parseFloat(budgetInput.value) || 0;
         let totalMsgs = 0, lastLimit = 0;
         let originalBudget = available;
